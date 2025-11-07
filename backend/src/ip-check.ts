@@ -1,4 +1,4 @@
-import { ALLOWED_IP_RANGES } from "./config.js";
+import { ALLOWED_IP_RANGES, ALLOW_ALL_IPS } from "./config.js";
 
 function ipToNumber(ip: string): number {
   const parts = ip.split(".");
@@ -16,6 +16,10 @@ function isIpInRange(ip: string, cidr: string): boolean {
 }
 
 export function isIpAllowed(ip: string): boolean {
+  if (ALLOW_ALL_IPS) {
+    return true;
+  }
+
   // Localhost check (uncomment for development)
   // if (ip === "::1" || ip === "127.0.0.1" || ip === "::ffff:127.0.0.1") {
   //   return true;
