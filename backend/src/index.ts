@@ -15,6 +15,16 @@ app.use(express.json());
 
 initDb();
 
+// HTML escape function to prevent XSS
+function escapeHtml(unsafe: string): string {
+  return unsafe
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
 if (!fs.existsSync(UPLOAD_DIR)) {
   fs.mkdirSync(UPLOAD_DIR, { recursive: true });
 }
@@ -365,7 +375,7 @@ app.get("/api/download/:hash", (req: Request, res: Response) => {
               </div>
             </div>
             <div class="file-info">
-              <div class="file-name">File: ${file.filename}</div>
+              <div class="file-name">File: ${escapeHtml(file.filename)}</div>
               <div class="file-size">Size: ${(file.filesize / 1024).toFixed(2)} KB</div>
             </div>
           </div>
