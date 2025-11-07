@@ -23,6 +23,16 @@ export async function GET(
     );
 
     if (!response.ok) {
+      const contentType = response.headers.get('content-type');
+
+      if (contentType?.includes('text/html')) {
+        const html = await response.text();
+        return new NextResponse(html, {
+          status: response.status,
+          headers: { 'Content-Type': 'text/html' }
+        });
+      }
+
       const error = await response.text();
       return NextResponse.json(
         { error: error || "Download failed" },
