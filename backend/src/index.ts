@@ -15,7 +15,6 @@ app.use(express.json());
 
 initDb();
 
-// HTML escape function to prevent XSS
 function escapeHtml(unsafe: string): string {
   return unsafe
     .replace(/&/g, "&amp;")
@@ -23,6 +22,14 @@ function escapeHtml(unsafe: string): string {
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#039;");
+}
+
+function sanitizeFilenameForHeader(filename: string): string {
+  return filename
+    .replace(/\\/g, "\\\\")
+    .replace(/"/g, '\\"')
+    .replace(/\n/g, "")
+    .replace(/\r/g, "");
 }
 
 if (!fs.existsSync(UPLOAD_DIR)) {
@@ -392,7 +399,7 @@ app.get("/api/download/:hash", (req: Request, res: Response) => {
     res.setHeader("Content-Type", file.mimetype || "application/octet-stream");
     res.setHeader(
       "Content-Disposition",
-      `attachment; filename="${file.filename}"`
+      `attachment; filename="${sanitizeFilenameForHeader(file.filename)}"`
     );
     res.sendFile(path.resolve(file.filepath));
   } catch (error) {
