@@ -58,7 +58,13 @@ export default function Home() {
     // Check file size (150MB limit)
     const MAX_SIZE = 150 * 1024 * 1024; // 150MB
     if (file.size > MAX_SIZE) {
-      alert(`File size exceeds 150MB limit. Your file is ${(file.size / 1024 / 1024).toFixed(2)}MB.`);
+      alert(
+        `File size exceeds 150MB limit. Your file is ${(
+          file.size /
+          1024 /
+          1024
+        ).toFixed(2)}MB.`
+      );
       return;
     }
 
@@ -185,7 +191,8 @@ export default function Home() {
                   <code className="rounded bg-zinc-800 px-1.5 py-0.5 text-xs text-orange-400">
                     zapfile.dev
                   </code>{" "}
-                  to your trusted environment in Claude Code settings
+                  to your allowed domains in Claude Code Web environment
+                  settings
                 </span>
               </li>
               <li className="flex gap-2">
