@@ -13,3 +13,4 @@ export const MAX_TOTAL_FILES = 1000;
 export const DATABASE_PATH = "zapfile.db";
 
 export const PORT = parseInt(process.env.PORT || "8000");
+export const ALLOW_ALL_IPS = process.env.ALLOW_ALL_IPS === "true";
