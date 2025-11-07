@@ -15,6 +15,23 @@ app.use(express.json());
 
 initDb();
 
+function escapeHtml(unsafe: string): string {
+  return unsafe
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+function sanitizeFilenameForHeader(filename: string): string {
+  return filename
+    .replace(/\\/g, "\\\\")
+    .replace(/"/g, '\\"')
+    .replace(/\n/g, "")
+    .replace(/\r/g, "");
+}
+
 if (!fs.existsSync(UPLOAD_DIR)) {
   fs.mkdirSync(UPLOAD_DIR, { recursive: true });
 }
@@ -365,7 +382,7 @@ app.get("/api/download/:hash", (req: Request, res: Response) => {
               </div>
             </div>
             <div class="file-info">
-              <div class="file-name">File: ${file.filename}</div>
+              <div class="file-name">File: ${escapeHtml(file.filename)}</div>
               <div class="file-size">Size: ${(file.filesize / 1024).toFixed(2)} KB</div>
             </div>
           </div>
@@ -382,7 +399,7 @@ app.get("/api/download/:hash", (req: Request, res: Response) => {
     res.setHeader("Content-Type", file.mimetype || "application/octet-stream");
     res.setHeader(
       "Content-Disposition",
-      `attachment; filename="${file.filename}"`
+      `attachment; filename="${sanitizeFilenameForHeader(file.filename)}"`
     );
     res.sendFile(path.resolve(file.filepath));
   } catch (error) {
