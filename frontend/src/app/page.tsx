@@ -98,7 +98,7 @@ export default function Home() {
 
       const responseText = await uploadPromise;
       const result = JSON.parse(responseText);
-      const fullUrl = `${window.location.origin}/f/${result.hash}`;
+      const fullUrl = `${window.location.origin}/api/download/${result.hash}`;
       setUploadedUrl(fullUrl);
     } catch (error) {
       console.error("Upload error:", error);
