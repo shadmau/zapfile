@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
-const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8000";
+const BACKEND_URL =
+  process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8000";
 
 export async function GET(
   request: NextRequest,
@@ -9,27 +10,26 @@ export async function GET(
   try {
     const { hash } = await params;
 
-    const forwarded = request.headers.get("x-forwarded-for");
-    const clientIp = forwarded ? forwarded.split(",")[0] : "unknown";
+    const clientIp =
+      request.headers.get("x-real-ip") ||
+      request.headers.get("x-forwarded-for")?.split(",")[0] ||
+      "unknown";
 
-    const response = await fetch(
-      `${BACKEND_URL}/api/download/${hash}`,
-      {
-        headers: {
-          "X-Forwarded-For": clientIp,
-          "X-Real-IP": clientIp,
-        },
-      }
-    );
+    const response = await fetch(`${BACKEND_URL}/api/download/${hash}`, {
+      headers: {
+        "X-Forwarded-For": clientIp,
+        "X-Real-IP": clientIp,
+      },
+    });
 
     if (!response.ok) {
-      const contentType = response.headers.get('content-type');
+      const contentType = response.headers.get("content-type");
 
-      if (contentType?.includes('text/html')) {
+      if (contentType?.includes("text/html")) {
         const html = await response.text();
         return new NextResponse(html, {
           status: response.status,
-          headers: { 'Content-Type': 'text/html' }
+          headers: { "Content-Type": "text/html" },
         });
       }
 
