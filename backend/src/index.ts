@@ -4,7 +4,12 @@ import multer from "multer";
 import crypto from "crypto";
 import path from "path";
 import fs from "fs";
-import { initDb, saveFileMetadata, getFileMetadata, incrementDownloadCount } from "./database.js";
+import {
+  initDb,
+  saveFileMetadata,
+  getFileMetadata,
+  incrementDownloadCount,
+} from "./database.js";
 import { isIpAllowed, getClientIp } from "./ip-check.js";
 import { UPLOAD_DIR, MAX_FILE_SIZE, MAX_TOTAL_FILES, PORT } from "./config.js";
 
@@ -50,57 +55,68 @@ const storage = multer.diskStorage({
 const upload = multer({
   storage,
   limits: { fileSize: MAX_FILE_SIZE },
+  fileFilter: (_req, file, cb) => {
+    const dangerous = /[.]{2,}|%2e|%2f|%5c|\\/i;
+    if (dangerous.test(file.originalname)) {
+      return cb(new Error("Invalid filename: contains forbidden characters"));
+    }
+    cb(null, true);
+  },
 });
 
-app.post("/api/upload", upload.single("file"), (req: Request, res: Response) => {
-  try {
-    if (!req.file) {
-      return res.status(400).json({ error: "No file uploaded" });
-    }
+app.post(
+  "/api/upload",
+  upload.single("file"),
+  (req: Request, res: Response) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ error: "No file uploaded" });
+      }
 
-    const existingFiles = fs.readdirSync(UPLOAD_DIR);
-    if (existingFiles.length >= MAX_TOTAL_FILES) {
-      fs.unlinkSync(req.file.path);
-      return res.status(507).json({
-        error: `Storage limit reached. Maximum ${MAX_TOTAL_FILES} files allowed.`
+      const existingFiles = fs.readdirSync(UPLOAD_DIR);
+      if (existingFiles.length >= MAX_TOTAL_FILES) {
+        fs.unlinkSync(req.file.path);
+        return res.status(507).json({
+          error: `Storage limit reached. Maximum ${MAX_TOTAL_FILES} files allowed.`,
+        });
+      }
+
+      const fileBuffer = fs.readFileSync(req.file.path);
+      const hash = crypto
+        .createHash("sha256")
+        .update(fileBuffer)
+        .update(Date.now().toString())
+        .digest("hex")
+        .substring(0, 24);
+
+      const ext = path.extname(req.file.originalname);
+      const newFilename = `${hash}${ext}`;
+      const newPath = path.join(UPLOAD_DIR, newFilename);
+      fs.renameSync(req.file.path, newPath);
+
+      const success = saveFileMetadata(
+        hash,
+        req.file.originalname,
+        newPath,
+        req.file.size,
+        req.file.mimetype
+      );
+
+      if (!success) {
+        return res.status(500).json({ error: "Failed to save file metadata" });
+      }
+
+      res.json({
+        hash,
+        filename: req.file.originalname,
+        size: req.file.size,
       });
+    } catch (error) {
+      console.error("Upload error:", error);
+      res.status(500).json({ error: "Failed to upload file" });
     }
-
-    const fileBuffer = fs.readFileSync(req.file.path);
-    const hash = crypto
-      .createHash("sha256")
-      .update(fileBuffer)
-      .update(Date.now().toString())
-      .digest("hex")
-      .substring(0, 24);
-
-    const ext = path.extname(req.file.originalname);
-    const newFilename = `${hash}${ext}`;
-    const newPath = path.join(UPLOAD_DIR, newFilename);
-    fs.renameSync(req.file.path, newPath);
-
-    const success = saveFileMetadata(
-      hash,
-      req.file.originalname,
-      newPath,
-      req.file.size,
-      req.file.mimetype
-    );
-
-    if (!success) {
-      return res.status(500).json({ error: "Failed to save file metadata" });
-    }
-
-    res.json({
-      hash,
-      filename: req.file.originalname,
-      size: req.file.size,
-    });
-  } catch (error) {
-    console.error("Upload error:", error);
-    res.status(500).json({ error: "Failed to upload file" });
   }
-});
+);
 
 app.get("/api/download/:hash/check", (req: Request, res: Response) => {
   try {
@@ -383,7 +399,9 @@ app.get("/api/download/:hash", (req: Request, res: Response) => {
             </div>
             <div class="file-info">
               <div class="file-name">File: ${escapeHtml(file.filename)}</div>
-              <div class="file-size">Size: ${(file.filesize / 1024).toFixed(2)} KB</div>
+              <div class="file-size">Size: ${(file.filesize / 1024).toFixed(
+                2
+              )} KB</div>
             </div>
           </div>
         </body>
@@ -395,13 +413,20 @@ app.get("/api/download/:hash", (req: Request, res: Response) => {
       return res.status(404).json({ error: "File not found on disk" });
     }
 
+    const resolvedPath = path.resolve(file.filepath);
+    const uploadDirResolved = path.resolve(UPLOAD_DIR);
+    if (!resolvedPath.startsWith(uploadDirResolved)) {
+      console.error("Path traversal attempt detected:", file.filepath);
+      return res.status(403).json({ error: "Access denied" });
+    }
+
     incrementDownloadCount(hash);
     res.setHeader("Content-Type", file.mimetype || "application/octet-stream");
     res.setHeader(
       "Content-Disposition",
       `attachment; filename="${sanitizeFilenameForHeader(file.filename)}"`
     );
-    res.sendFile(path.resolve(file.filepath));
+    res.sendFile(resolvedPath);
   } catch (error) {
     console.error("Download error:", error);
     res.status(500).json({ error: "Failed to download file" });
