@@ -6,7 +6,7 @@ Quick file sharing for Claude Code Web.
 
 - Drag & drop file upload (max 150MB)
 - Shareable links with 24-char hash
-- IP-restricted downloads (Claude Code Web only)
+- Optional IP-based access control
 
 ## Quick Start
 
@@ -48,13 +48,14 @@ Edit `.env`:
 
 ```bash
 PORT=8000
+ALLOW_ALL_IPS=true  # Set to false to enable IP whitelisting
 ```
 
-Edit `backend/src/config.ts` for IP whitelist:
+Optional: Enable IP whitelisting by setting `ALLOW_ALL_IPS=false` and configure IP ranges in `backend/src/config.ts`:
 
 ```typescript
 export const ALLOWED_IP_RANGES = [
-  "0.0.0.0/0", // Allow all (testing only)
+  "192.168.1.0/24",   // Example: Your network
 ];
 ```
 

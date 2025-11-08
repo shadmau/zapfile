@@ -144,12 +144,19 @@ app.get("/api/download/:hash/check", (req: Request, res: Response) => {
 });
 
 app.get("/api/download/:hash", (req: Request, res: Response) => {
+  const { hash } = req.params;
+  const clientIp = getClientIp(req.headers, req.socket.remoteAddress);
+
+  // Helper function for logging download attempts
+  const logDownload = (status: string, details: string) => {
+    console.log(`[${new Date().toISOString()}] [DOWNLOAD] ${status} | ${details}`);
+  };
+
   try {
-    const { hash } = req.params;
-    const clientIp = getClientIp(req.headers, req.socket.remoteAddress);
     const file = getFileMetadata(hash);
 
     if (!file) {
+      logDownload('FAILED - not_found', `IP: ${clientIp} | Hash: ${hash} | User-Agent: ${req.headers['user-agent'] || 'unknown'}`);
       return res.status(404).send(`
         <!DOCTYPE html>
         <html lang="en">
@@ -241,6 +248,7 @@ app.get("/api/download/:hash", (req: Request, res: Response) => {
 
     // Check if IP is allowed
     if (!isIpAllowed(clientIp)) {
+      logDownload('FAILED - ip_blocked', `IP: ${clientIp} | Hash: ${hash} | File: ${file.filename} | Size: ${file.filesize} | User-Agent: ${req.headers['user-agent'] || 'unknown'}`);
       // Return HTML message instead of JSON error
       return res.status(403).send(`
         <!DOCTYPE html>
@@ -416,11 +424,12 @@ app.get("/api/download/:hash", (req: Request, res: Response) => {
     const resolvedPath = path.resolve(file.filepath);
     const uploadDirResolved = path.resolve(UPLOAD_DIR);
     if (!resolvedPath.startsWith(uploadDirResolved)) {
-      console.error("Path traversal attempt detected:", file.filepath);
+      logDownload('FAILED - path_traversal', `IP: ${clientIp} | Hash: ${hash} | File: ${file.filename} | Filepath: ${file.filepath} | User-Agent: ${req.headers['user-agent'] || 'unknown'}`);
       return res.status(403).json({ error: "Access denied" });
     }
 
     incrementDownloadCount(hash);
+    logDownload('SUCCESS', `IP: ${clientIp} | Hash: ${hash} | File: ${file.filename} | Size: ${file.filesize} | User-Agent: ${req.headers['user-agent'] || 'unknown'}`);
     res.setHeader("Content-Type", file.mimetype || "application/octet-stream");
     res.setHeader(
       "Content-Disposition",
@@ -428,7 +437,7 @@ app.get("/api/download/:hash", (req: Request, res: Response) => {
     );
     res.sendFile(resolvedPath);
   } catch (error) {
-    console.error("Download error:", error);
+    logDownload('FAILED - error', `IP: ${clientIp} | Hash: ${hash} | Error: ${error} | User-Agent: ${req.headers['user-agent'] || 'unknown'}`);
     res.status(500).json({ error: "Failed to download file" });
   }
 });
