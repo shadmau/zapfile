@@ -20,4 +20,4 @@ Make sure the backend is running on `http://localhost:8000`
 - Drag and drop file upload
 - Simple, clean UI
 - Copy shareable link
-- Download page with IP-based access control
+- Download page with optional IP-based access control
