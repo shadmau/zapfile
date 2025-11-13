@@ -8,7 +8,29 @@ Quick file sharing for Claude Code Web.
 - Shareable links with 24-char hash
 - Optional IP-based access control
 
-## Quick Start
+## Usage
+
+Use the hosted service at **zapfile.dev**:
+
+### Upload a file
+
+```bash
+curl -F "file=@yourfile.pdf" https://zapfile.dev/api/upload
+```
+
+Response includes a `shareUrl` you can use to download the file.
+
+### Download a file
+
+```bash
+curl -O https://zapfile.dev/api/download/{hash}
+```
+
+Or visit the share link in a browser.
+
+## Self-Hosting
+
+### Quick Start
 
 ```bash
 # Frontend
@@ -22,9 +44,9 @@ npm install
 npm run dev  # http://localhost:8000
 ```
 
-## Configuration
+### Configuration
 
-### Frontend
+#### Frontend
 
 ```bash
 cd frontend
@@ -37,7 +59,7 @@ Edit `.env.local`:
 NEXT_PUBLIC_BACKEND_URL=http://localhost:8000  # Dev
 ```
 
-### Backend
+#### Backend
 
 ```bash
 cd backend
