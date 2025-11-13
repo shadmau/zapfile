@@ -134,7 +134,7 @@ export default function Home() {
   };
 
   const handleCopyUploadCurl = async () => {
-    const curlCommand = `curl -F "file=@yourfile.pdf" ${window.location.origin}/api/upload`;
+    const curlCommand = `curl ${window.location.origin}/api/upload -F file=@yourfile.pdf`;
     try {
       await navigator.clipboard.writeText(curlCommand);
       setCopiedUploadCurl(true);
@@ -347,35 +347,37 @@ export default function Home() {
               />
             </div>
 
-            {/* curl Upload Instructions */}
-            <div className="mt-4 rounded-lg border border-zinc-800 bg-zinc-900/30 p-4">
-              <p className="mb-2 text-xs font-medium text-zinc-400">
-                Via curl:
-              </p>
-              <div className="flex items-center gap-2">
-                <div className="flex-1 overflow-x-auto rounded-md border border-zinc-700 bg-zinc-950 px-3 py-2">
-                  <code className="whitespace-nowrap font-mono text-xs text-zinc-300">
-                    curl -F &quot;file=@yourfile.pdf&quot;{" "}
-                    {typeof window !== "undefined"
-                      ? window.location.origin
-                      : "https://zapfile.dev"}
-                    /api/upload
-                  </code>
+            {/* curl Upload Instructions - only show when no file uploaded */}
+            {!uploadedUrl && (
+              <div className="mt-4 rounded-lg border border-zinc-800 bg-zinc-900/30 p-4">
+                <p className="mb-2 text-xs font-medium text-zinc-400">
+                  Via curl:
+                </p>
+                <div className="flex items-center gap-2">
+                  <div className="flex-1 overflow-x-auto rounded-md border border-zinc-700 bg-zinc-950 px-3 py-2">
+                    <code className="whitespace-nowrap font-mono text-xs text-zinc-300">
+                      curl{" "}
+                      {typeof window !== "undefined"
+                        ? window.location.origin
+                        : "https://zapfile.dev"}
+                      /api/upload -F file=@yourfile.pdf
+                    </code>
+                  </div>
+                  <Button
+                    onClick={handleCopyUploadCurl}
+                    size="sm"
+                    variant="outline"
+                    className="flex-shrink-0 border-zinc-700 bg-zinc-900 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100"
+                  >
+                    {copiedUploadCurl ? (
+                      <Check className="h-3.5 w-3.5" />
+                    ) : (
+                      <Copy className="h-3.5 w-3.5" />
+                    )}
+                  </Button>
                 </div>
-                <Button
-                  onClick={handleCopyUploadCurl}
-                  size="sm"
-                  variant="outline"
-                  className="flex-shrink-0 border-zinc-700 bg-zinc-900 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100"
-                >
-                  {copiedUploadCurl ? (
-                    <Check className="h-3.5 w-3.5" />
-                  ) : (
-                    <Copy className="h-3.5 w-3.5" />
-                  )}
-                </Button>
               </div>
-            </div>
+            )}
 
             {/* Link Display */}
             {uploadedUrl && (
@@ -420,12 +422,7 @@ export default function Home() {
                   </div>
                 </div>
 
-                <div className="rounded-lg border border-orange-900/50 bg-orange-950/30 p-4 text-sm text-orange-300">
-                  <strong>Note:</strong> Share this link with Claude Code Web
-                  for it to download the file.
-                </div>
-
-                <div className="mt-4">
+                <div className="mb-4">
                   <p className="mb-2 text-xs font-medium text-zinc-400">
                     Download via curl:
                   </p>
@@ -452,6 +449,11 @@ export default function Home() {
                       )}
                     </Button>
                   </div>
+                </div>
+
+                <div className="rounded-lg border border-orange-900/50 bg-orange-950/30 p-4 text-sm text-orange-300">
+                  <strong>Note:</strong> Share this link with Claude Code Web
+                  for it to download the file.
                 </div>
               </motion.div>
             )}

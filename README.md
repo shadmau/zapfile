@@ -15,7 +15,7 @@ Use the hosted service at **zapfile.dev**:
 ### Upload a file
 
 ```bash
-curl -F "file=@yourfile.pdf" https://zapfile.dev/api/upload
+curl https://zapfile.dev/api/upload -F file=@yourfile.pdf
 ```
 
 Response includes a `shareUrl` you can use to download the file.
